@@ -69,13 +69,15 @@ public class EquationPrefab
         int charXIndex = GetXIndex(targetID);
 
         string afterXEquation = equation.Substring(charXIndex).TrimStart('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-        string equationXResult = equation.Substring(0, charXIndex) + "X" + afterXEquation + "=" + result.Value;
+        string equationXResult = equation.Substring(0, charXIndex) + "X" + afterXEquation + "=" + resultInfo;
 
         var newEquation = new Equation();
         newEquation.expressionXResult = equationXResult;
         newEquation.correctAnswer = numbers.ElementAt(targetID - 1);
         if (manualIncorrectAnswers)
             newEquation.incorrectAnswers = incorrectAnswers;
+        else
+            newEquation.incorrectAnswers = new float[0];
 
         return newEquation;
     }
@@ -122,6 +124,7 @@ public class Equation
     public string expressionRight => expressionXResult.Split('X')[1];
 
 
+    public int length => expressionXResult.Length;
 
     /// <summary>
     /// Строка мат.выражения с 'X' вместо одного из чисел и равенством
