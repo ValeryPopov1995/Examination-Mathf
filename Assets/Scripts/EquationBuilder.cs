@@ -148,15 +148,17 @@ public class EquationBuilder : MonoBehaviour
 
         int incorrectAnswerCount = Mathf.Min(answersCount - 1, equation.incorrectAnswers.Length); // чего меньше, пустых кнопок или вручную заданных неверных ответов
         int incorrectIndex = 0;
+        int manualButtonInstertIndex = 0;
         for (int i = 0; i < answerButtons.Count; i++) // заполняем остальные кнопки неправильными ответами
         {
             if (i == correctAnswerButtonId) continue;
 
-            if (i < incorrectAnswerCount + 1)
+            if (manualButtonInstertIndex < incorrectAnswerCount)
             {
                 // вносим вручную заданный неверный ответ
                 answerButtons[i].SetAnswer(equation.incorrectAnswers[incorrectIndex]);
                 incorrectIndex++;
+                manualButtonInstertIndex++;
             }
             else
             {
