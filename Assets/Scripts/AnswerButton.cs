@@ -10,20 +10,29 @@ public class AnswerButton : MonoBehaviour
 
     public bool IsCorrectAnswer => text.text == builder.equation.correctAnswer.ToString();
 
-    [SerializeField] Color incorrectColor;
     [SerializeField] Color correctColor;
+    [SerializeField] Color incorrectColor;
+    [SerializeField] Image backLight;
+
+    private Color correctBacklightColor;
+    private Color incorrectBacklightColor;
 
     private EquationBuilder builder => EquationBuilder.Singlton;
 
-    private Image image;
+    private Image background;
     private Color defaultColor;
+    private Color defaultBacklightColor;
     private int buttonId;
 
     private void Awake()
     {
-        image = GetComponent<Image>();
-        defaultColor = image.color;
+        background = GetComponent<Image>();
+        defaultColor = background.color;
+        defaultBacklightColor = backLight.color;
         text.DOFade(0, 0);
+
+        correctBacklightColor = new Color(correctColor.r, correctColor.g, correctColor.b, backLight.color.a);
+        incorrectBacklightColor = new Color(incorrectColor.r, incorrectColor.g, incorrectColor.b, backLight.color.a);
 
         GetComponent<Button>().onClick.AddListener(OnButtonClick);
     }
@@ -45,20 +54,29 @@ public class AnswerButton : MonoBehaviour
         builder.CheckAnswerClick(this);
 
         if (IsCorrectAnswer)
-            image.DOColor(correctColor, builder.animDuration);
+        {
+            background.DOColor(correctColor, builder.animDuration);
+            backLight.DOColor(correctBacklightColor, builder.animDuration);
+        }
         else
-            image.DOColor(incorrectColor, builder.animDuration);
+        {
+            background.DOColor(incorrectColor, builder.animDuration);
+            backLight.DOColor(incorrectBacklightColor, builder.animDuration);
+        }
     }
 
-    public async void Appear()
+    public void MoveToPosition() => transform.DOMoveX(builder.firstButtonPositionX + buttonId * builder.answerButtonSpacing, builder.animDuration);
+    public void MoveToStart() => transform.DOMoveX(builder.spawnPoint.position.x, builder.animDuration);
+    public void FadeIn() => text.DOFade(1, builder.animDuration);
+    public void FadeOut()
     {
-        await transform.DOMoveX(builder.firstButtonPositionX + buttonId * builder.answerButtonSpacing, builder.animDuration).AsyncWaitForCompletion();
-        await text.DOFade(1, builder.animDuration).AsyncWaitForCompletion();
+        background.DOColor(defaultColor, builder.animDuration);
+        backLight.DOColor(defaultBacklightColor, builder.animDuration);
+        text.DOFade(0, builder.animDuration);
     }
-    public async void Disappear()
+    public void FinishFadeIn()
     {
-        image.DOColor(defaultColor, builder.animDuration);
-        await text.DOFade(0, builder.animDuration).AsyncWaitForCompletion();
-        await transform.DOMoveX(builder.spawnPoint.position.x, builder.animDuration).AsyncWaitForCompletion();
+        background.DOFade(1, builder.animDuration);
+        backLight.DOFade(1, builder.animDuration);
     }
 }

@@ -32,8 +32,8 @@ public class EquationPrefab
     public float resultInfo;
     public float? result;
 
+    [Space]
     public bool manualIncorrectAnswers = false;
-    [ShowIf("manualIncorrectAnswers"), AllowNesting]
     public float[] incorrectAnswers;
 
     public bool hasAnswer => result != null;

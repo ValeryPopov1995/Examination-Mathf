@@ -4,7 +4,9 @@ using TMPro;
 using UnityEngine;
 using DG.Tweening;
 using System.Threading.Tasks;
+using UnityEngine.UI;
 
+[RequireComponent(typeof(CanvasGroup))]
 /// <summary>
 /// Формирует мат.выражение и варианты ответа, анимирует построение и действия игрока
 /// </summary>
@@ -18,6 +20,7 @@ public class EquationBuilder : MonoBehaviour
 
     [Header("Equation")]
     [SerializeField] RectTransform equationRect;
+    [SerializeField] Image backlight;
     [SerializeField] TextMeshProUGUI textLeft;
     [SerializeField] TextMeshProUGUI textX;
     [SerializeField] TextMeshProUGUI textRigt;
@@ -41,6 +44,8 @@ public class EquationBuilder : MonoBehaviour
 
     private List<AnswerButton> answerButtons = new List<AnswerButton>();
     private int correctAnswerButtonId;
+    private CanvasGroup canvasGroup;
+    private TextMeshProUGUI textSlerp;
     #endregion
 
 
@@ -48,12 +53,13 @@ public class EquationBuilder : MonoBehaviour
     private void Awake()
     {
         Singlton = this;
-
+        canvasGroup = GetComponent<CanvasGroup>();
         startEquationWidth = equationRect.rect.width;
 
         textLeft.DOFade(0, 0);
         textX.DOFade(0, 0);
         textRigt.DOFade(0, 0);
+        canvasGroup.alpha = 0;
 
         firstButtonPositionX = spawnPoint.position.x - answerButtonSpacing * (answersCount - 1) / 2;
 
@@ -63,6 +69,9 @@ public class EquationBuilder : MonoBehaviour
             answerButtons.Add(button);
             button.Init(i);
         }
+
+        textSlerp = Instantiate(textX, transform);
+        textSlerp.DOFade(0, 0);
     }
 
     private void Start()
@@ -86,19 +95,26 @@ public class EquationBuilder : MonoBehaviour
 
     private IEnumerator LevelSiquanceCoroutine()
     {
+        // start appear
+        yield return new WaitForSeconds(1);
+        yield return canvasGroup.DOFade(1, animDuration).WaitForCompletion();
+
         for (int i = 0; i < levelEquationCount; i++)
         {
             UpdateEquation();
 
             // appear
+            SetTextAnswers();
+            
+            for (int j = 0; j < answerButtons.Count; j++) answerButtons[j].MoveToPosition();
             yield return equationRect.DOSizeDelta(new Vector2(equation.length * pixelsPerChar, equationRect.rect.height), animDuration).WaitForCompletion();
+            
+
+            for (int j = 0; j < answerButtons.Count; j++) answerButtons[j].FadeIn();
             textLeft.DOFade(1, animDuration);
             textX.DOFade(1, animDuration);
             yield return textRigt.DOFade(1, animDuration).WaitForCompletion();
 
-            SetTextAnswers();
-            for (int j = 0; j < answerButtons.Count; j++) answerButtons[j].Appear();
-            yield return new WaitForSeconds(animDuration * 2);
             IsInput = true;
 
 
@@ -108,16 +124,21 @@ public class EquationBuilder : MonoBehaviour
             yield return StartCoroutine(AnimateSlerpAnswer(answerButtons[correctAnswerButtonId].transform.position, animDuration, animDuration));
 
 
-            // disappear
-            for (int j = 0; j < answerButtons.Count; j++) answerButtons[j].Disappear();
-            yield return new WaitForSeconds(animDuration * 2);
 
+            // disappear
+            for (int j = 0; j < answerButtons.Count; j++) answerButtons[j].FadeOut();
             textLeft.DOFade(0, animDuration);
+            textSlerp.DOFade(0, animDuration);
             yield return textRigt.DOFade(0, animDuration).WaitForCompletion();
+
+            for (int j = 0; j < answerButtons.Count; j++) answerButtons[j].MoveToStart();
             yield return equationRect.DOSizeDelta(new Vector2(startEquationWidth, equationRect.rect.height), animDuration).WaitForCompletion();
         }
 
+        IsInput = false;
         // end animation
+        for (int j = 0; j < answerButtons.Count; j++) answerButtons[j].FinishFadeIn();
+        backlight.DOFade(1, animDuration);
     }
 
     private void SetTextAnswers()
@@ -131,7 +152,7 @@ public class EquationBuilder : MonoBehaviour
         {
             if (i == correctAnswerButtonId) continue;
 
-            if (i < incorrectAnswerCount)
+            if (i < incorrectAnswerCount + 1)
             {
                 // вносим вручную заданный неверный ответ
                 answerButtons[i].SetAnswer(equation.incorrectAnswers[incorrectIndex]);
@@ -149,21 +170,21 @@ public class EquationBuilder : MonoBehaviour
 
     private IEnumerator AnimateSlerpAnswer(Vector3 startPosition, float duration, float durationAfterMove = 0)
     {
-        int slerpSteps = 60;
+        int slerpSteps = 50;
         float stepDuration = duration / slerpSteps;
 
-        var answerSlerpText = Instantiate(textX, startPosition, Quaternion.identity, transform);
-        answerSlerpText.rectTransform.sizeDelta = textX.rectTransform.sizeDelta;
-        answerSlerpText.text = equation.correctAnswer.ToString();
+        textSlerp.transform.position = startPosition;
+        textSlerp.rectTransform.sizeDelta = textX.rectTransform.sizeDelta;
+        textSlerp.text = equation.correctAnswer.ToString();
+        textSlerp.DOFade(1, 0);
 
         for (int i = 0; i < slerpSteps; i++)
         {
-            answerSlerpText.transform.position = Vector3.Slerp(startPosition, textX.transform.position, i / (float)slerpSteps);
+            textSlerp.transform.position = Vector3.Slerp(startPosition, textX.transform.position, i / (float)slerpSteps);
             yield return new WaitForSeconds(stepDuration);
         }
 
         if (durationAfterMove > 0) yield return new WaitForSeconds(durationAfterMove);
-        Destroy(answerSlerpText.gameObject);
     }
 
     private void UpdateEquation()

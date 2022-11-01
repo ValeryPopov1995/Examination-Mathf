@@ -29,7 +29,10 @@ MonoBehaviour:
     manualIncorrectAnswers: 0
     incorrectAnswers: []
   - equation: 4+4+4
-    numbersIDforX: 2
+    numbersIDforX: 1,2,3
     resultInfo: 12
-    manualIncorrectAnswers: 0
-    incorrectAnswers: []
+    manualIncorrectAnswers: 1
+    incorrectAnswers:
+    - 7
+    - 8
+    - 9
